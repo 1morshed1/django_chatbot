@@ -1,0 +1,39 @@
+# Core Django & Database
+Django==4.2.7
+djangorestframework==3.14.0
+psycopg2-binary>=2.9.9,<3.0
+django-cors-headers==4.3.1
+django-environ==0.10.0
+pgvector==0.2.4
+
+# LangGraph & AI Orchestration
+langgraph>=0.2,<0.3
+langchain>=0.3,<0.4
+langchain-core>=0.3,<0.4
+langchain-community>=0.3,<0.4
+
+# LLM Provider
+groq==0.9.0
+
+# Embeddings & NLP
+sentence-transformers==2.5.1
+transformers==4.35.2
+torch>=2.2.0,<2.6
+
+# Text Processing & Utilities
+numpy>=1.26.0,<2.0
+python-dotenv==1.0.0
+requests==2.31.0
+tqdm==4.66.1
+
+# Development & Testing
+pytest==7.4.2
+pytest-django==4.5.2
+pytest-asyncio==0.21.1
+black==23.9.1
+flake8==6.1.0
+pre-commit==3.4.0
+
+# Production
+gunicorn==21.2.0
+whitenoise==6.5.0
