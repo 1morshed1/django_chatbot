@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'corsheaders',
     
     # Local apps
-    'rag',
+    'rag.apps.RagConfig',
 ]
 
 MIDDLEWARE = [
