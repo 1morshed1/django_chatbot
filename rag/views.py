@@ -129,7 +129,6 @@ def get_session(request, session_id):
 
 
 @api_view(['POST'])
-@api_view(['POST'])
 def chat_stream(request):
     """Stream chat responses via SSE using LangGraph agent."""
     

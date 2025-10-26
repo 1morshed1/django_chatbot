@@ -13,7 +13,7 @@ class AgentState(TypedDict):
     messages: Annotated[list, operator.add]
     context: str
     query: str
-    session_id: int  # Add this to track session
+    session_id: int
 
 def retrieve_node(state: AgentState):
     """RAG retrieval node"""
@@ -22,39 +22,62 @@ def retrieve_node(state: AgentState):
     return {"context": context}
 
 def generate_node(state: AgentState):
-    """LLM generation node"""
+    """LLM generation node using direct Groq API"""
+    import requests
+    import json
+    
     api_key = os.getenv('GROQ_API_KEY')
     if not api_key:
         raise ValueError("GROQ_API_KEY not set")
     
-    llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
-        temperature=0.7,
-        max_tokens=8000,
-        api_key=api_key
-    )
+    # Convert context string back to list format for build_prompt
+    context_str = state.get('context', '')
     
-    # Build proper message format
+    # Create proper chunks list with all required fields
+    if context_str and context_str != "No relevant context found in uploaded documents.":
+        relevant_chunks = [{
+            'content': context_str, 
+            'filename': 'retrieved_documents', 
+            'chunk_index': 0,
+            'similarity': 1.0
+        }]
+    else:
+        relevant_chunks = []
+    
+    # Build prompt messages
     prompt_messages = build_prompt(
         state['query'],
         state.get('messages', []),
-        state.get('context', '')
+        relevant_chunks
     )
     
-    # Convert to LangChain format if needed
-    from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+    # Prepare API request
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
     
-    lc_messages = []
-    for msg in prompt_messages:
-        if msg['role'] == 'system':
-            lc_messages.append(SystemMessage(content=msg['content']))
-        elif msg['role'] == 'user':
-            lc_messages.append(HumanMessage(content=msg['content']))
-        elif msg['role'] == 'assistant':
-            lc_messages.append(AIMessage(content=msg['content']))
+    data = {
+        "messages": prompt_messages,
+        "model": "llama-3.3-70b-versatile",
+        "temperature": 0.7,
+        "max_tokens": 8000,
+        "stream": False
+    }
     
-    response = llm.invoke(lc_messages)
-    return {"messages": [{"role": "assistant", "content": response.content}]}
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        response.raise_for_status()
+        
+        result = response.json()
+        assistant_message = result['choices'][0]['message']['content']
+        
+        return {"messages": [{"role": "assistant", "content": assistant_message}]}
+        
+    except Exception as e:
+        print(f"Groq API error: {e}")
+        return {"messages": [{"role": "assistant", "content": "I encountered an error while processing your request. Please try again."}]}
 
 # Build graph
 workflow = StateGraph(AgentState)
