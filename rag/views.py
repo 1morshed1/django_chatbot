@@ -141,6 +141,9 @@ def chat_stream(request):
     
     def event_stream():
         try:
+            # Import here to avoid initialization issues
+            import groq
+            
             # Get session
             session = ChatSession.objects.get(id=session_id)
             
@@ -162,13 +165,17 @@ def chat_stream(request):
             chunks = retrieve_relevant_chunks(user_message, top_k=10)
             messages = build_prompt(user_message, history, chunks)
             
-            # Stream from LLM - Fixed initialization
-            from groq import Groq
+            # Initialize Groq client properly
+            api_key = os.getenv('GROQ_API_KEY')
+            if not api_key or api_key == 'your_groq_api_key_here':
+                yield f"data: {json.dumps({'type': 'error', 'error': 'GROQ_API_KEY not configured'})}\n\n"
+                return
             
-            client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+            # Create client with minimal args
+            client = groq.Groq(api_key=api_key)
             
             stream = client.chat.completions.create(
-                model='llama-3.1-70b-versatile',
+                model='llama-3.3-70b-versatile',
                 messages=messages,
                 stream=True,
                 max_tokens=8000,

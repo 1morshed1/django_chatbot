@@ -13,8 +13,9 @@ langchain-core>=0.3,<0.4
 langchain-community>=0.3,<0.4
 
 # LLM Provider
-groq==0.9.0
+groq==0.11.0
 langchain-groq>=0.1.0
+httpx==0.27.0
 
 # Embeddings & NLP
 sentence-transformers==2.5.1
