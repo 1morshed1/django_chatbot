@@ -1,3 +1,5 @@
+# rag/services/chunking.py
+
 from transformers import AutoTokenizer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from .embeddings import embedding_service

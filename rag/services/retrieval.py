@@ -1,3 +1,4 @@
+# rag/services/retrieval.py
 from django.db import connection
 from .embeddings import embedding_service
 

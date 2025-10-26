@@ -1,3 +1,4 @@
+# rag/models.py
 from django.db import models
 from pgvector.django import VectorField
 

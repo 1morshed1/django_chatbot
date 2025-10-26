@@ -1,3 +1,4 @@
+# rag/views.py
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,6 +8,7 @@ from .serializers import DocumentSerializer, ChatSessionSerializer
 from .services.chunking import chunk_document
 from .services.retrieval import retrieve_relevant_chunks
 from .services.context import build_prompt
+from .services.agent import run_agent 
 import json
 import time
 import logging
@@ -127,8 +129,9 @@ def get_session(request, session_id):
 
 
 @api_view(['POST'])
+@api_view(['POST'])
 def chat_stream(request):
-    """Stream chat responses via SSE."""
+    """Stream chat responses via SSE using LangGraph agent."""
     
     session_id = request.data.get('session_id')
     user_message = request.data.get('message')
@@ -141,9 +144,6 @@ def chat_stream(request):
     
     def event_stream():
         try:
-            # Import here to avoid initialization issues
-            import groq
-            
             # Get session
             session = ChatSession.objects.get(id=session_id)
             
@@ -154,46 +154,34 @@ def chat_stream(request):
                 content=user_message
             )
             
-            # Build context
+            # Get chat history (last 50 messages)
             history = list(
                 session.messages
+                .exclude(content=user_message)  # Exclude the one we just added
                 .order_by('-created_at')[:50]
                 .values('role', 'content')
             )
             history.reverse()
             
-            chunks = retrieve_relevant_chunks(user_message, top_k=10)
-            messages = build_prompt(user_message, history, chunks)
+            # Run the LangGraph agent (non-streaming)
+            yield f"data: {json.dumps({'type': 'status', 'message': 'Processing...'})}\n\n"
             
-            # Initialize Groq client properly
-            api_key = os.getenv('GROQ_API_KEY')
-            if not api_key or api_key == 'your_groq_api_key_here':
-                yield f"data: {json.dumps({'type': 'error', 'error': 'GROQ_API_KEY not configured'})}\n\n"
-                return
-            
-            # Create client with minimal args
-            client = groq.Groq(api_key=api_key)
-            
-            stream = client.chat.completions.create(
-                model='llama-3.3-70b-versatile',
-                messages=messages,
-                stream=True,
-                max_tokens=8000,
-                temperature=0.7
+            response_text = run_agent(
+                query=user_message,
+                chat_history=history,
+                session_id=session_id
             )
             
-            full_response = []
-            for chunk in stream:
-                if chunk.choices[0].delta.content:
-                    token = chunk.choices[0].delta.content
-                    full_response.append(token)
-                    yield f"data: {json.dumps({'type': 'content', 'content': token})}\n\n"
+            # Stream the response word by word for better UX
+            words = response_text.split(' ')
+            for word in words:
+                yield f"data: {json.dumps({'type': 'content', 'content': word + ' '})}\n\n"
             
-            # Save complete response
+            # Save assistant response
             assistant_msg = ChatMessage.objects.create(
                 session=session,
                 role='assistant',
-                content=''.join(full_response)
+                content=response_text
             )
             
             yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
