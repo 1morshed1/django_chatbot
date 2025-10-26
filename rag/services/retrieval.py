@@ -21,6 +21,7 @@ def retrieve_relevant_chunks(
     """
     # Generate query embedding
     query_embedding = embedding_service.generate_embedding(query)
+    embedding_list = query_embedding.tolist()
     
     # Search using pgvector
     with connection.cursor() as cursor:
@@ -40,10 +41,10 @@ def retrieve_relevant_chunks(
             ORDER BY dc.embedding <=> %s::vector
             LIMIT %s
         """, [
-            query_embedding.tolist(),
-            query_embedding.tolist(),
+            embedding_list, 
+            embedding_list,  
             min_similarity,
-            query_embedding.tolist(),
+            embedding_list,  
             top_k
         ])
         
