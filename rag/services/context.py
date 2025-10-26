@@ -56,7 +56,7 @@ class ContextManager:
 def build_prompt(
     user_message: str,
     chat_history: list,
-    relevant_chunks: list
+    relevant_chunks: list  # Now accepts list, not string
 ) -> list:
     """Build complete prompt for LLM."""
     
@@ -74,13 +74,16 @@ INSTRUCTIONS:
     
     messages = [system_message]
     
-    # Add document context
-    if relevant_chunks:
+    # Add document context if available
+    if relevant_chunks and len(relevant_chunks) > 0:
+        from .retrieval import format_context
         doc_context = format_context(relevant_chunks)
-        messages.append({
-            "role": "system",
-            "content": doc_context
-        })
+        
+        if doc_context and doc_context != "No relevant context found in uploaded documents.":
+            messages.append({
+                "role": "system",
+                "content": doc_context
+            })
     
     # Add filtered history
     history = ContextManager.get_history_for_context(chat_history)

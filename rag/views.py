@@ -6,9 +6,7 @@ from django.http import StreamingHttpResponse
 from .models import Document, DocumentChunk, ChatSession, ChatMessage
 from .serializers import DocumentSerializer, ChatSessionSerializer
 from .services.chunking import chunk_document
-from .services.retrieval import retrieve_relevant_chunks
-from .services.context import build_prompt
-from .services.agent import run_agent 
+from .services.agent import run_agent_streaming  # ✅ Import streaming version
 import json
 import time
 import logging
@@ -16,7 +14,6 @@ import os
 
 logger = logging.getLogger(__name__)
 
-# Maximum file size (5 MB)
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
@@ -130,75 +127,100 @@ def get_session(request, session_id):
 
 @api_view(['POST'])
 def chat_stream(request):
-    """Stream chat responses via SSE using LangGraph agent."""
+    """
+    Stream chat responses via SSE with TRUE token-by-token streaming from Groq API.
+    """
     
     session_id = request.data.get('session_id')
     user_message = request.data.get('message')
     
-    if not session_id or not user_message:
+    # Validation
+    if not session_id:
         return Response(
-            {"error": "session_id and message required"},
+            {"error": "session_id required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if not user_message or not user_message.strip():
+        return Response(
+            {"error": "message required and cannot be empty"},
             status=status.HTTP_400_BAD_REQUEST
         )
     
     def event_stream():
+        """Generator for Server-Sent Events with TRUE streaming."""
+        
+        full_response = ""  # Accumulate for saving to DB
+        
         try:
             # Get session
-            session = ChatSession.objects.get(id=session_id)
+            try:
+                session = ChatSession.objects.get(id=session_id)
+            except ChatSession.DoesNotExist:
+                logger.error(f"Session {session_id} not found")
+                yield f"data: {json.dumps({'type': 'error', 'error': 'Session not found'})}\n\n"
+                return
             
             # Save user message
-            ChatMessage.objects.create(
+            user_msg = ChatMessage.objects.create(
                 session=session,
                 role='user',
-                content=user_message
+                content=user_message.strip()
             )
+            logger.info(f"Saved user message {user_msg.id} to session {session_id}")
             
-            # Get chat history (last 50 messages)
-            history = list(
-                session.messages
-                .exclude(content=user_message)  # Exclude the one we just added
-                .order_by('-created_at')[:50]
-                .values('role', 'content')
-            )
-            history.reverse()
+            # Get chat history (excluding the message we just added)
+            history_qs = session.messages.exclude(id=user_msg.id).order_by('created_at')
+            history = list(history_qs.values('role', 'content'))
             
-            # Run the LangGraph agent (non-streaming)
-            yield f"data: {json.dumps({'type': 'status', 'message': 'Processing...'})}\n\n"
+            logger.info(f"Retrieved {len(history)} historical messages")
             
-            response_text = run_agent(
-                query=user_message,
-                chat_history=history,
-                session_id=session_id
-            )
+            # Send start event
+            yield f"data: {json.dumps({'type': 'start'})}\n\n"
             
-            # Stream the response word by word for better UX
-            words = response_text.split(' ')
-            for word in words:
-                yield f"data: {json.dumps({'type': 'content', 'content': word + ' '})}\n\n"
+            # Stream tokens from LLM
+            logger.info("Starting token stream from Groq API...")
             
-            # Save assistant response
-            assistant_msg = ChatMessage.objects.create(
-                session=session,
-                role='assistant',
-                content=response_text
-            )
+            from .services.agent import run_agent_streaming
             
-            yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
+            for token in run_agent_streaming(user_message, history, session_id):
+                # Accumulate full response
+                full_response += token
+                
+                # Stream token to client
+                yield f"data: {json.dumps({'type': 'content', 'content': token})}\n\n"
             
-        except ChatSession.DoesNotExist:
-            logger.error(f"Session {session_id} not found")
-            yield f"data: {json.dumps({'type': 'error', 'error': 'Session not found'})}\n\n"
-        
+            logger.info(f"Streaming completed. Total response length: {len(full_response)} chars")
+            
+            # Save assistant response to database
+            if full_response.strip():
+                assistant_msg = ChatMessage.objects.create(
+                    session=session,
+                    role='assistant',
+                    content=full_response.strip()
+                )
+                logger.info(f"Saved assistant message {assistant_msg.id}")
+                
+                # Send completion event
+                yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
+            else:
+                logger.warning("Empty response from LLM")
+                yield f"data: {json.dumps({'type': 'error', 'error': 'Empty response from LLM'})}\n\n"
+            
         except Exception as e:
             logger.exception("Error in chat stream")
             yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
     
+    # Create streaming response
     response = StreamingHttpResponse(
         event_stream(),
         content_type='text/event-stream'
     )
+    
+    # Required headers for SSE (REMOVED Connection header!)
     response['Cache-Control'] = 'no-cache'
-    response['X-Accel-Buffering'] = 'no'
+    response['X-Accel-Buffering'] = 'no'  # Disable nginx buffering
+    # ❌ REMOVED: response['Connection'] = 'keep-alive'  # This causes the error!
     
     return response
 
@@ -221,9 +243,11 @@ def health_check(request):
             "status": "healthy",
             "database": "connected",
             "embedding_service": "loaded",
-            "embedding_dim": len(test_embedding)
+            "embedding_dim": len(test_embedding),
+            "groq_api_configured": bool(os.getenv('GROQ_API_KEY'))
         })
     except Exception as e:
+        logger.exception("Health check failed")
         return Response({
             "status": "unhealthy",
             "error": str(e)
