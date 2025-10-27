@@ -12,14 +12,14 @@ from .context import build_prompt
 
 class AgentState(TypedDict):
     messages: Annotated[list, operator.add]
-    context: list  # Changed from str to list
+    context: list  
     query: str
     session_id: int
 
 def retrieve_node(state: AgentState):
     """RAG retrieval node"""
     chunks = retrieve_relevant_chunks(state['query'], top_k=10)
-    return {"context": chunks}  # Return list, not string
+    return {"context": chunks}  
 
 def generate_node(state: AgentState):
     """LLM generation node - non-streaming version for graph execution"""
@@ -141,7 +141,7 @@ def run_agent_streaming(query: str, chat_history: list, session_id: int) -> Iter
             "model": "llama-3.3-70b-versatile",
             "temperature": 0.7,
             "max_tokens": 8000,
-            "stream": True  # ✅ TRUE STREAMING
+            "stream": True 
         }
         
         logger.info("Starting streaming request to Groq API...")
@@ -150,7 +150,7 @@ def run_agent_streaming(query: str, chat_history: list, session_id: int) -> Iter
             url, 
             headers=headers, 
             json=data, 
-            stream=True,  # ✅ Enable streaming
+            stream=True,  
             timeout=120
         )
         response.raise_for_status()
@@ -161,7 +161,7 @@ def run_agent_streaming(query: str, chat_history: list, session_id: int) -> Iter
                 line = line.decode('utf-8')
                 
                 if line.startswith('data: '):
-                    data_str = line[6:]  # Remove 'data: ' prefix
+                    data_str = line[6:]  
                     
                     if data_str == '[DONE]':
                         break

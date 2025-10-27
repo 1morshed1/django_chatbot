@@ -139,11 +139,6 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/ragdb
 
 # Groq API
 GROQ_API_KEY=your-groq-api-key-here
-
-# Optional: Model Settings
-SKIP_MODEL_LOADING=False
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-EMBEDDING_BATCH_SIZE=32
 ```
 
 ### 6. Run Database Migrations
@@ -546,35 +541,6 @@ loglevel = "info"
 gunicorn config.wsgi:application -c gunicorn.conf.py
 ```
 
-### Nginx Configuration (for SSE)
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    
-    client_max_body_size 10M;
-    
-    location /static/ {
-        alias /path/to/staticfiles/;
-    }
-    
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        
-        # Critical for Server-Sent Events
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_set_header Connection '';
-        proxy_http_version 1.1;
-        chunked_transfer_encoding off;
-    }
-}
-```
-
 ### Environment Variables for Production
 
 ```env
@@ -586,8 +552,6 @@ DATABASE_URL=postgresql://user:password@db-host:5432/ragdb
 
 GROQ_API_KEY=<your-production-api-key>
 
-# Optional
-SKIP_MODEL_LOADING=False
 ```
 
 ## 🔍 Troubleshooting
@@ -736,34 +700,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Groq** - LLM API provider
 - **Sentence Transformers** - Embedding models
 - **LangChain/LangGraph** - RAG orchestration
-- **Qtec Solution Limited** - Project sponsor
 
 ## 📧 Contact
 
 For questions or support, please open an issue on GitHub or contact the development team.
-
-## 🗺️ Roadmap
-
-### Completed ✅
-- [x] Document upload and chunking
-- [x] Vector-based semantic search
-- [x] Streaming chat responses
-- [x] Chat session management
-- [x] LangGraph integration
-
-### In Progress 🚧
-- [ ] Frontend web interface
-- [ ] API authentication
-- [ ] Rate limiting
-
-### Planned 📅
-- [ ] Support for PDF, DOCX files
-- [ ] Multi-language support
-- [ ] Advanced reranking
-- [ ] Redis caching
-- [ ] Celery for async processing
-- [ ] Docker deployment
-- [ ] Cloud deployment guides
 
 ---
 

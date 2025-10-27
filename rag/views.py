@@ -6,7 +6,7 @@ from django.http import StreamingHttpResponse
 from .models import Document, DocumentChunk, ChatSession, ChatMessage
 from .serializers import DocumentSerializer, ChatSessionSerializer
 from .services.chunking import chunk_document
-from .services.agent import run_agent_streaming  # ✅ Import streaming version
+from .services.agent import run_agent_streaming 
 import json
 import time
 import logging
@@ -217,10 +217,10 @@ def chat_stream(request):
         content_type='text/event-stream'
     )
     
-    # Required headers for SSE (REMOVED Connection header!)
+    # Required headers for SSE
     response['Cache-Control'] = 'no-cache'
-    response['X-Accel-Buffering'] = 'no'  # Disable nginx buffering
-    # ❌ REMOVED: response['Connection'] = 'keep-alive'  # This causes the error!
+    response['X-Accel-Buffering'] = 'no' 
+    
     
     return response
 

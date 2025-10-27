@@ -1,8 +1,8 @@
-# RESEARCH_AND_ANALYSIS_MVP.md (Simplified for Quick Launch)
+# RESEARCH_AND_ANALYSIS
 
 ## 1. System Architecture Overview
 
-### Simplified Architecture (No Redis/Celery)
+### Simplified Architecture
 
 ```
 ┌─────────────┐
@@ -88,34 +88,9 @@
 | **Orchestration** | LangGraph | Clean workflow management |
 | **Cache** | Django in-memory | Built-in, zero config |
 
-### What We're NOT Using (Yet)
-
-❌ **Redis** - Django's in-memory cache is sufficient for <100 users  
-❌ **Celery** - Synchronous processing fast enough for <10MB files  
-❌ **Docker** - Can deploy directly or add later  
-❌ **Reranking** - Start with basic cosine similarity  
-
-### When to Add Them Later
-
-```python
-# Add Redis when:
-- >100 concurrent users
-- Cache needs to persist across server restarts
-- Need distributed caching
-
-# Add Celery when:
-- Document processing takes >10 seconds
-- Need background jobs
-- Handling concurrent uploads
-
-# Add Reranking when:
-- Retrieval quality needs improvement
-- Users report irrelevant results
-```
-
 ---
 
-## 3. Document Processing (Simplified)
+## 3. Document Processing
 
 ### Single Tokenizer Approach
 
@@ -312,7 +287,7 @@ def upload_document(request):
 
 ---
 
-## 4. Retrieval Strategy (Simplified)
+## 4. Retrieval Strategy
 
 ### Basic Top-K Cosine Similarity
 
@@ -650,7 +625,7 @@ def stream_from_groq(messages: List[Dict]):
 
 ---
 
-## 7. Django Cache Setup (Instead of Redis)
+## 7. Django Cache Setup
 
 ### Configuration
 
@@ -774,7 +749,7 @@ class SimpleRateLimitMiddleware:
 
 ---
 
-## 9. Complete Requirements (Minimal)
+## 9. Complete Requirements
 
 ```txt
 # requirements.txt - Minimal for MVP
@@ -1029,7 +1004,7 @@ class ChatMessage(models.Model):
 
 ---
 
-## 12. Production Deployment (Simple)
+## 12. Production Deployment
 
 ### Using Gunicorn + Nginx
 
@@ -1256,75 +1231,5 @@ def test_retrieval():
 ```
 
 ---
-
-## 16. When to Upgrade
-
-### Add Celery When:
-- Document processing takes >10 seconds
-- Need to handle >5 concurrent uploads
-- Want background processing for large files
-
-### Add Redis When:
-- >100 concurrent users
-- Cache hit rate matters for cost/performance
-- Need cache persistence across restarts
-- Need distributed rate limiting
-
-### Add Reranking When:
-- Users report irrelevant results
-- Need better retrieval precision
-- Have processing budget for extra step
-
-### Migrate Vector DB When:
-- >1M document chunks
-- pgvector queries become slow (>2s)
-- Need specialized vector features
-
----
-
-## 17. Summary
-
-### What You're Building
-
-✅ **MVP RAG System with:**
-- Synchronous document upload (2-5s processing)
-- Semantic search with pgvector
-- Streaming chat responses
-- Token-based context management
-- Simple caching and rate limiting
-- Production-ready deployment
-
-### Implementation Timeline
-
-**Week 1: Core**
-- Django setup + PostgreSQL
-- Document upload & chunking
-- Embedding generation
-- Basic retrieval
-
-**Week 2: Chat**
-- SSE streaming
-- Context management
-- LangGraph integration
-- Simple UI
-
-**Week 3: Polish**
-- Rate limiting
-- Logging & monitoring
-- Tests
-- Deployment
-
-### Total Complexity
-
-- **Lines of code:** ~1,500
-- **Services to run:** 2 (Django + PostgreSQL)
-- **External dependencies:** 1 (Groq API)
-- **Time to deploy:** ~2-3 weeks
-
-This is a **simple, production-ready system** you can actually build and deploy quickly. Add complexity (Redis, Celery, reranking) only when you need it!
-
----
-
-**Document Version:** MVP 1.0  
 **Target:** Quick Launch with Essential Features  
 **Philosophy:** Start simple, scale when needed
