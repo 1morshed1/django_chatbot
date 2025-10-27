@@ -721,7 +721,5 @@ For questions or support, please open an issue on GitHub or contact the developm
 
 ---
 
-**Built with ❤️ for Qtec Solution Limited**
-
 **Version:** 1.0.0  
 **Last Updated:** October 26, 2025
