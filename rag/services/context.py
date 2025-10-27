@@ -56,7 +56,7 @@ class ContextManager:
 def build_prompt(
     user_message: str,
     chat_history: list,
-    relevant_chunks: list  # Now accepts list, not string
+    relevant_chunks: list 
 ) -> list:
     """Build complete prompt for LLM."""
     

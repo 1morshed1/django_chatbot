@@ -18,6 +18,20 @@ A production-ready AI chatbot with document-aware responses using Retrieval-Augm
 - **📊 Chat History** - Persistent conversation sessions with message tracking
 - **🎯 High Performance** - Batch embedding generation, connection pooling, optimized queries
 
+## 📸 Demo
+
+| Chat Interface | Document Upload | Streaming Response |
+|:--------------:|:---------------:|:------------------:|
+| ![Chat Interface](screenshot/Screenshot%20from%202025-10-26%2011-09-11.png) | ![Document Upload](screenshot/Screenshot%20from%202025-10-26%2011-13-56.png) | ![Streaming Response](screenshot/Screenshot%20from%202025-10-26%2011-15-02.png) |
+
+| Document Processing | Chat History | API Endpoints |
+|:-------------------:|:------------:|:-------------:|
+| ![Document Processing](screenshot/Screenshot%20from%202025-10-26%2011-15-35.png) | ![Chat History](screenshot/Screenshot%20from%202025-10-26%2011-17-46.png) | ![API Endpoints](screenshot/Screenshot%20from%202025-10-26%2011-18-26.png) |
+
+| Health Check | Session Management | Document Context |
+|:------------:|:------------------:|:----------------:|
+| ![Health Check](screenshot/Screenshot%20from%202025-10-26%2011-28-49.png) | ![Session Management](screenshot/Screenshot%20from%202025-10-26%2011-29-00.png) | ![Document Context](screenshot/Screenshot%20from%202025-10-26%2011-29-02.png) |
+
 ## 🏗️ Architecture
 
 ```
