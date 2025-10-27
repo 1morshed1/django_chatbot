@@ -20,9 +20,9 @@ A production-ready AI chatbot with document-aware responses using Retrieval-Augm
 
 ## 📸 Demo
 
-| Chat Interface | Document Upload | Streaming Response |
-|:--------------:|:---------------:|:------------------:|
-| ![Chat Interface](screenshot/Screenshot%20from%202025-10-26%2011-09-11.png) | ![Document Upload](screenshot/Screenshot%20from%202025-10-26%2011-13-56.png) | ![Streaming Response](screenshot/Screenshot%20from%202025-10-26%2011-15-02.png) |
+| Document Upload | Streaming Response |
+|:---------------:|:------------------:|
+| ![Document Upload](screenshot/Screenshot%20from%202025-10-26%2011-13-56.png) | ![Streaming Response](screenshot/Screenshot%20from%202025-10-26%2011-15-02.png) |
 
 | Document Processing | Chat History | API Endpoints |
 |:-------------------:|:------------:|:-------------:|
